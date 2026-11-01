@@ -1,0 +1,42 @@
+import { readFile, readdir } from 'node:fs/promises';
+import assert from 'node:assert/strict';
+import { JSDOM, VirtualConsole } from 'jsdom';
+const subpath = 'https://example.test/navegacion-y-pantallas/';
+const errors = [];
+const virtualConsole = new VirtualConsole();
+virtualConsole.on('jsdomError', e => { if (!e.message.includes('CSS') && !e.message.includes('navigation')) errors.push(e.message); });
+const html = await readFile('dist/centro-avanzado.html', 'utf8');
+const dom = new JSDOM(html, {url:subpath+'centro-avanzado.html', runScripts:'dangerously', virtualConsole, beforeParse(w) { w.structuredClone=structuredClone; }});
+const w=dom.window,d=w.document;
+const click=a=>{const el=d.querySelector(`[data-action="${a}"]`);assert.ok(el,`Action ${a} exists`);el.click();};
+const field=(key,value)=>{const el=d.querySelector(`[data-field="${key}"]`);assert.ok(el,key);el.value=String(value);el.dispatchEvent(new w.Event('change',{bubbles:true}));};
+const role=value=>{d.querySelector('#role').value=value;d.querySelector('#role').dispatchEvent(new w.Event('change',{bubbles:true}));};
+const state=()=>JSON.parse(w.localStorage.getItem('reformando-v3-state'));
+const expected={gerente:8,comercial:5,jefe:7,trabajador:4,proveedor:3,cliente:6};
+for(const [r,count] of Object.entries(expected)) { role(r); assert.equal(d.querySelectorAll('#nav button').length,count,r); for(const el of [...d.querySelectorAll('#nav button')]) { click(el.dataset.action); assert.ok(d.querySelector('#app h1'),`${r} screen renders`); } }
+console.log('PASS: six profiles and all their main screens');
+role('gerente');click('go:presupuesto');click('step:1');click('expand:1');field('qty:1',40);assert.equal(state().lines[1].qty,40);
+click('step:3');click('send');assert.equal(state().status,'enviado');assert.equal(state().history.length,1);
+role('cliente');click('go:presupuesto');assert.ok(!d.querySelector('#app').textContent.includes('Costes internos'));click('accept');assert.equal(state().status,'firmado');
+role('gerente');click('go:obra');click('convert');assert.equal(state().work,true);
+console.log('PASS: budget quantity, version, simulated acceptance and conversion to work');
+click('go:anexos');click('newannex');field('annex:0',375);click('sendannex:0');role('cliente');click('go:anexos');click('acceptannex:0');assert.equal(state().annexes[0].status,'aceptado');assert.equal(state().annexes[0].delta,375);
+console.log('PASS: independent annex send and acceptance');
+role('trabajador');click('go:tareas');click('edit-task:1');field('hours:1',9);field('pct:1',100);field('taskstatus:1','Terminada');role('jefe');click('go:tareas');click('validate:1');assert.equal(state().tasks[1].approved,true);assert.equal(state().tasks[1].hours,9);
+click('go:materiales');field('materialstatus:0','Entregado en obra');assert.equal(state().materials[0].status,'Entregado en obra');click('go:plan');click('view:gantt');assert.ok(d.querySelector('#app').textContent.includes('Remates'));click('approve');assert.equal(state().delay,false);
+console.log('PASS: work report, validation, materials and rescheduling');
+assert.equal(new URL(d.querySelector('footer a').getAttribute('href'),w.location.href).href,subpath);
+const bridge={name:'Prueba de transferencia',client:'Cliente ficticio',address:'Madrid',vat:21,lines:[{id:'test',room:'Cocina',name:'Alicatado',trade:'Albañilería',unit:'m²',qty:32,price:42,cost:27,enabled:true}]};
+const bridgeDom=new JSDOM(html,{url:subpath+'centro-avanzado.html',runScripts:'dangerously',virtualConsole,beforeParse(w){w.structuredClone=structuredClone;w.localStorage.setItem('reformando-v3-bridge',JSON.stringify(bridge));}});
+assert.ok(bridgeDom.window.document.querySelector('#app').textContent.includes('Prueba de transferencia'));assert.equal(bridgeDom.window.localStorage.getItem('reformando-v3-bridge'),null);
+console.log('PASS: budget bridge and return URL under /navegacion-y-pantallas/');
+const index=await readFile('dist/index.html','utf8');
+for(const path of [...index.matchAll(/(?:src|href)="([^"]+)"/g)].map(x=>x[1])) { assert.ok(!path.startsWith('/'),`Relative asset ${path}`); await readFile('dist/'+path.replace(/^\.\//,'')); }
+const files=await readdir('dist/assets');const bundle=await readFile('dist/assets/'+files.find(x=>x.endsWith('.js')),'utf8');
+const appDom=new JSDOM('<!doctype html><div id="root"></div>',{url:subpath,runScripts:'dangerously',pretendToBeVisual:true,virtualConsole,beforeParse(w){w.scrollTo=()=>{};w.matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}});}});
+appDom.window.eval(bundle);await new Promise(resolve=>setTimeout(resolve,80));
+const ad=appDom.window.document;assert.ok(ad.body.textContent.includes('Tu día, bajo control'));
+for(const label of ['Obras','Presupuestos','Tareas','Más','Inicio']) { const b=[...ad.querySelectorAll('button')].find(x=>x.textContent===label);assert.ok(b,label);b.click();await new Promise(resolve=>setTimeout(resolve,30));assert.ok(ad.querySelector('main')); }
+console.log('PASS: compiled React app and five primary navigation sections in DOM');
+assert.deepEqual(errors,[]);dom.window.close();bridgeDom.window.close();appDom.window.close();
+console.log('LIMIT: DOM checks do not validate visual layout, touch behavior or real browser rendering.');
