@@ -27,4 +27,4 @@ No hay comandos de eliminación automática aquí: falta la inspección del árb
 
 ## Acceso GitHub
 
-La conexión actual de GitHub solo muestra repositorios del usuario `ReformandoPro` y `Works-In-Gen-io`, pero no encuentra `Reformando-Pro/navegacion-y-pantallas` (404). Autorizar la aplicación de GitHub en la organización correcta o añadir el nuevo repositorio a su instalación para permitir preparar PRs y publicar desde el chat.
+El conector usado en esta auditoría devuelve 404 para `Reformando-Pro/reforapp` y `Reformando-Pro/navegacion-y-pantallas`. Chrome autenticado permite inspeccionar los dos y editar el destino. Para trabajar por API se necesita acceso de la instalación GitHub a esos repositorios; no se han modificado permisos.
