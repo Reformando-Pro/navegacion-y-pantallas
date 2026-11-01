@@ -2,6 +2,15 @@
 
 Mockup independiente para diseñar y validar pantallas, navegación, estética y usabilidad de Reformando.app. Utiliza datos ficticios; no es la aplicación operativa.
 
+## Sitio público
+
+- Mockup: https://reformando-pro.github.io/navegacion-y-pantallas/
+- Centro V3: https://reformando-pro.github.io/navegacion-y-pantallas/centro-avanzado.html
+
+Publicado el 1 de noviembre de 2026 con autorización del propietario. La rama `gh-pages` contiene la compilación estática del commit `6ab53768f5b99df998e6c615cdf5f668ef0a402b` de esta rama. La PR #1 sigue abierta y no se ha fusionado. Para actualizar el sitio, reconstruir y comprobar la fuente, y copiar la nueva salida `dist/` a `gh-pages` mediante commits normales. No editar las pantallas compiladas directamente.
+
+Se ha comprobado la navegación principal y el paso a V3 en Chrome, los seis perfiles y la vista de 390 px. Esta comprobación no sustituye una revisión visual y de accesibilidad completa de todas las pantallas.
+
 ## Funcionalidades conservadas
 
 - App React móvil: inicio, obras, fichas de obra, presupuestos, asistente por capítulos/estancias, partidas y mediciones, costes y margen, tareas, compras, proveedores, equipo, CRM, documentos, incidencias, seguimiento cliente y configuración.
@@ -35,12 +44,12 @@ npm run preview
 
 ## GitHub Pages (publicación manual)
 
-No se activa ningún despliegue al incorporar este código. El workflow activo de CI solo instala, compila y prueba.
+El workflow de CI solo instala, compila y prueba. El sitio ya publicado se sirve desde la raíz de `gh-pages`, sin fusionar la PR ni desplegar la aplicación principal.
 
-Cuando se apruebe publicar:
+Para sustituir la publicación desde `gh-pages` por un workflow de publicación:
 
 1. Revisar la visibilidad resultante de Pages: un repositorio privado no garantiza por sí solo que el sitio sea privado.
-2. Copiar `docs/ejemplo-pages.yml` a `.github/workflows/pages.yml` y configurar Pages para GitHub Actions.
+2. Copiar `docs/ejemplo-pages.yml` a `.github/workflows/pages.yml` y cambiar la fuente de Pages de rama a GitHub Actions.
 3. Ejecutar ese workflow manualmente. Publica `dist/`; no contiene backend.
 
 Vite usa `base: './'`, los recursos compilados son relativos y los enlaces entre módulos conservan `/navegacion-y-pantallas/`. La navegación interna React está en memoria; no requiere reglas de reescritura de rutas de un servidor.
